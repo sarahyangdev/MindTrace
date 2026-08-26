@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindTrace — Mental Health Navigator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10"/>
+          <path d="M12 8v4l3 2"/>
+          <circle cx="18" cy="6" r="3" fill="#fff" stroke="none"/>
+        </svg>
+      </div>
+      MindTrace
+    </div>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Enter ZIP code, coordinates, or tract FIPS">
+      <button class="btn btn-primary" onclick="handleSearch()">Search</button>
+      <button class="btn btn-secondary" onclick="handleGeolocate()" title="Use my location">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+      </button>
+    </div>
+    <a class="crisis-link" href="tel:988">988 Crisis Line</a>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="app-main">
+    <!-- Map -->
+    <section class="map-section">
+      <div id="map"></div>
+      <div class="map-legend" id="map-legend">
+        <div class="legend-title">Mental Distress Prevalence</div>
+        <div class="legend-gradient"></div>
+        <div class="legend-labels"><span>Low</span><span>High</span></div>
+      </div>
+      <div class="map-loading" id="map-loading">Loading 9,070 census tracts...</div>
+    </section>
+
+    <!-- Insights Panel -->
+    <aside class="insights-panel" id="insights-panel">
+      <!-- Welcome -->
+      <div class="panel-welcome" id="panel-welcome">
+        <div class="accent-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <h2>Select a Census Tract</h2>
+        <p>Click any point on the map or search by ZIP code to view community distress analysis, SHAP feature drivers, and nearby mental health resources.</p>
+        <div class="model-info">
+          XGBoost v2 &middot; 20 features &middot; R&sup2; 0.724 &middot; MAE 1.18 pts
+        </div>
+      </div>
+
+      <!-- Detail View -->
+      <div class="detail-view" id="detail-view">
+        <div class="panel-section">
+          <div class="tract-header">
+            <h2 id="tract-id"></h2>
+            <span class="county-badge" id="tract-county"></span>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-card">
+              <div class="metric-label">Predicted</div>
+              <div class="metric-value" id="metric-distress"></div>
+              <div class="metric-sub">MHLTH crude prev.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Percentile</div>
+              <div class="metric-value" id="metric-pctl"></div>
+              <div class="metric-sub">within California</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Population</div>
+              <div class="metric-value" id="metric-pop"></div>
+              <div class="metric-sub">total tract pop.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHAP -->
+        <div class="panel-section">
+          <div class="shap-title">What Drives This Tract</div>
+          <div id="shap-chart"></div>
+          <div class="shap-baseline" id="shap-baseline"></div>
+        </div>
+
+        <!-- Groq AI -->
+        <div class="panel-section">
+          <div class="groq-header">
+            <h3>Community Insights</h3>
+            <span class="groq-badge">Groq AI</span>
+          </div>
+          <div class="groq-response" id="groq-response">
+            <span class="groq-cursor" id="groq-cursor"></span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Facilities -->
+  <section class="facilities-section">
+    <div class="facilities-header" id="facilities-toggle" onclick="toggleSection('facilities')">
+      <h2>Nearby Facilities <span class="count" id="fac-count">0</span></h2>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="section-body" id="facilities-body">
+      <div class="radius-tabs">
+        <button class="radius-tab active" onclick="setRadius(5, this)">5 mi</button>
+        <button class="radius-tab" onclick="setRadius(10, this)">10 mi</button>
+        <button class="radius-tab" onclick="setRadius(25, this)">25 mi</button>
+      </div>
+      <div class="facilities-scroll" id="facilities-scroll"></div>
+    </div>
+  </section>
+
+  <!-- Coping Toolkit -->
+  <section class="toolkit-section">
+    <div class="toolkit-header" onclick="toggleSection('toolkit')">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Guided Coping Toolkit
+      </h2>
+      <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="section-body" id="toolkit-body">
+      <div class="toolkit-grid">
+        <div class="toolkit-card">
+          <h3>Box Breathing</h3>
+          <p class="toolkit-desc">4-second cycle: inhale, hold, exhale, hold</p>
+          <div class="breathing-circle-wrap">
+            <div class="breathing-circle" id="breathing-circle"></div>
+          </div>
+          <div class="breathing-label" id="breathing-label">Press start</div>
+          <div class="breathing-timer" id="breathing-timer"></div>
+          <button class="btn btn-primary" id="breathing-btn" onclick="toggleBreathing()">Start</button>
+        </div>
+        <div class="toolkit-card" style="text-align:left;">
+          <h3>5-4-3-2-1 Grounding</h3>
+          <p class="toolkit-desc">Sensory identification sequence</p>
+          <div class="grounding-steps">
+            <div class="grounding-step" onclick="this.classList.toggle('done')">
+              <div class="step-num">5</div><span>things you can <strong>see</strong></span>
+            </div>
+            <div class="grounding-step" onclick="this.classList.toggle('done')">
+              <div class="step-num">4</div><span>things you can <strong>touch</strong></span>
+            </div>
+            <div class="grounding-step" onclick="this.classList.toggle('done')">
+              <div class="step-num">3</div><span>things you can <strong>hear</strong></span>
+            </div>
+            <div class="grounding-step" onclick="this.classList.toggle('done')">
+              <div class="step-num">2</div><span>things you can <strong>smell</strong></span>
+            </div>
+            <div class="grounding-step" onclick="this.classList.toggle('done')">
+              <div class="step-num">1</div><span>thing you can <strong>taste</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Disclaimer -->
+  <footer class="disclaimer-bar">
+    This tool is informational and for coping support only &mdash; not a clinical diagnostic instrument or emergency dispatch.
+    If you are in crisis, call <a href="tel:988">988</a> or text HOME to <a href="sms:741741&body=HOME">741741</a>.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

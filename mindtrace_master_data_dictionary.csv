@@ -1,0 +1,142 @@
+column,group,description,source,units,non_null,pct_complete,dtype
+tract_fips,Identity,11-digit 2020 Census tract GEOID (primary key),US Census / CDC PLACES,FIPS code,9070,100,str
+state_fips,Identity,State FIPS (06 = California),US Census,FIPS code,9070,100,str
+county_fips,Identity,5-digit county FIPS,US Census,FIPS code,9070,100,str
+county_name,Identity,County name,CDC PLACES,text,9070,100,str
+tract_vintage,Identity,Census tract boundary vintage,US Census,year,9070,100,int64
+tract_lat,Identity,Tract centroid latitude,CDC PLACES Geolocation,degrees,9070,100,float64
+tract_lon,Identity,Tract centroid longitude,CDC PLACES Geolocation,degrees,9070,100,float64
+total_population,Identity,Total tract population,CDC PLACES (2020 Census),persons,9070,100,int64
+total_pop_18plus,Identity,Adult (18+) tract population,CDC PLACES,persons,9070,100,int64
+places_year,Identity,PLACES estimate year used for this tract,CDC PLACES 2025 release,year,9070,100,int64
+mhlth_crude_prev,TARGET,"MODEL TARGET y: frequent mental distress, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+mhlth_state_percentile,TARGET,"Tract distress percentile within California (PRD ""predicted distress percentile"")",Derived,percentile 0-100,9070,100,float64
+mhlth_low_ci,TARGET,Lower 95% CI for MHLTH,CDC PLACES,% of adults,9070,100,float64
+mhlth_high_ci,TARGET,Upper 95% CI for MHLTH,CDC PLACES,% of adults,9070,100,float64
+pm25_annual,CORE FEATURE 1,Annual mean fine particulate matter (PRD pm25_annual),"CDC/EPA Downscaler tract-level daily PM2.5, 2021",ug/m3,9070,100,float64
+tree_canopy_pct,CORE FEATURE 2,"Green/canopy cover share of tract area, 2022 (PRD tree_canopy_pct). LA County only",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+poverty_rate,CORE FEATURE 3,Population living below 2x federal poverty level (PRD poverty_rate),"CalEnviroScreen 4.0, area-weighted to 2020 tracts",% of population,9050,99.8,float64
+housing_burden_pct,CORE FEATURE 4,Low-income households spending >50% of income on housing (PRD housing_burden_pct),"CalEnviroScreen 4.0, area-weighted to 2020 tracts",% of households,9015,99.4,float64
+dist_to_mental_health,CORE FEATURE 5,Great-circle distance from tract centroid to nearest licensed mental-health facility (PRD dist_to_mental_health),CA HCAI health_facility_locations,miles,9070,100,float64
+n_core_features_present,Modeling,How many of the 5 PRD core features are non-null (0-5),Derived,count,9070,100,int64
+model_ready_all5,Modeling,1 if all 5 core features AND the target are present,Derived,flag 0/1,9070,100,int64
+has_tree_canopy_data,Modeling,1 if green-coverage data exists (LA County tracts),Derived,flag 0/1,9070,100,int64
+plc_access2,Health context (PLACES),"No health insurance, adults 18-64, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_arthritis,Health context (PLACES),"Arthritis, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_binge,Health context (PLACES),"Binge drinking, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_bphigh,Health context (PLACES),"High blood pressure, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_bpmed,Health context (PLACES),"Taking BP medication, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_cancer,Health context (PLACES),"Cancer (non-skin), crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_casthma,Health context (PLACES),"Current asthma, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_chd,Health context (PLACES),"Coronary heart disease, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_checkup,Health context (PLACES),"Routine checkup past year, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_cholscreen,Health context (PLACES),"Cholesterol screening, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_cognition,Health context (PLACES),"Cognitive disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_colon_screen,Health context (PLACES),"Colorectal cancer screening, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_copd,Health context (PLACES),"COPD, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_csmoking,Health context (PLACES),"Current smoking, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_dental,Health context (PLACES),"Dental visit past year, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_depression,Health context (PLACES),"Depression, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_diabetes,Health context (PLACES),"Diagnosed diabetes, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_disability,Health context (PLACES),"Any disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_emotionspt,Health context (PLACES),"Lacks social/emotional support, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_foodinsecu,Health context (PLACES),"Food insecurity, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_foodstamp,Health context (PLACES),"Received food stamps, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_ghlth,Health context (PLACES),"Fair or poor general health, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_hearing,Health context (PLACES),"Hearing disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_highchol,Health context (PLACES),"High cholesterol, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_housinsecu,Health context (PLACES),"Housing insecurity, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_indeplive,Health context (PLACES),"Independent living disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_lacktrpt,Health context (PLACES),"Lack of reliable transportation, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_loneliness,Health context (PLACES),"Feeling socially isolated, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_lpa,Health context (PLACES),"No leisure-time physical activity, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_mammouse,Health context (PLACES),"Mammography use, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9065,99.9,float64
+plc_mobility,Health context (PLACES),"Mobility disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_obesity,Health context (PLACES),"Obesity, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_phlth,Health context (PLACES),"Frequent physical distress, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_selfcare,Health context (PLACES),"Self-care disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_shututility,Health context (PLACES),"Utility services shut-off threat, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_sleep,Health context (PLACES),"Sleeping less than 7 hours, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_stroke,Health context (PLACES),"Stroke, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+plc_teethlost,Health context (PLACES),"All teeth lost (65+), crude prevalence among adults",CDC PLACES 2025 release,% of adults,9067,100,float64
+plc_vision,Health context (PLACES),"Vision disability, crude prevalence among adults",CDC PLACES 2025 release,% of adults,9070,100,float64
+depression_low_ci,Health context,Lower 95% CI for depression prevalence,CDC PLACES,% of adults,9070,100,float64
+depression_high_ci,Health context,Upper 95% CI for depression prevalence,CDC PLACES,% of adults,9070,100,float64
+pm25_max_daily_2021,Air quality,Highest single-day PM2.5 in 2021 (wildfire smoke peaks),CDC/EPA Downscaler,ug/m3,9070,100,float64
+pm25_pct_days_above_9ugm3,Air quality,Share of days above the 9 ug/m3 annual NAAQS level,CDC/EPA Downscaler 2021,% of days,9070,100,float64
+pm25_pct_days_above_35ugm3,Air quality,Share of days above the 35 ug/m3 24-hour NAAQS,CDC/EPA Downscaler 2021,% of days,9070,100,float64
+ozone_days_above_70ppb_2021,Air quality,"Days exceeding the 70 ppb ozone NAAQS, 2021",CDC/EPA Downscaler,days,9070,100,float64
+ozone_days_above_70ppb_2022,Air quality,"Days exceeding the 70 ppb ozone NAAQS, 2022",CDC/EPA Downscaler,days,9070,100,float64
+ozone_max_ppb_2021,Air quality,"Peak daily 8-hour max ozone, 2021",CDC/EPA Downscaler,ppb,9070,100,float64
+ozone_max_ppb_2022,Air quality,"Peak daily 8-hour max ozone, 2022",CDC/EPA Downscaler,ppb,9070,100,float64
+ozone_mean_ppb_2021,Air quality,"Mean daily 8-hour max ozone, 2021",CDC/EPA Downscaler,ppb,9070,100,float64
+ozone_mean_ppb_2022,Air quality,"Mean daily 8-hour max ozone, 2022",CDC/EPA Downscaler,ppb,9070,100,float64
+ozone_mean_ppb_2yr,Air quality,Mean ozone across 2021-2022,Derived,ppb,9070,100,float64
+ozone_exceedance_days_2yr,Air quality,Total ozone exceedance days across 2021-2022,Derived,days,9070,100,float64
+ces4_score,Environmental burden,Overall CalEnviroScreen 4.0 cumulative burden score,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9041,99.7,float64
+ces4_percentile,Environmental burden,Overall CalEnviroScreen 4.0 percentile,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9041,99.7,float64
+ces4_ozone,Environmental burden,Ozone concentration indicator (2017-2019),"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_pm25_2015_2017,Environmental burden,PM2.5 annual mean baseline (2015-2017),"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_diesel_pm,Environmental burden,Diesel particulate matter emissions,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_drinking_water,Environmental burden,Drinking water contaminant index,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9067,100,float64
+ces4_lead,Environmental burden,Childhood lead risk from housing,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9043,99.7,float64
+ces4_pesticides,Environmental burden,Agricultural pesticide use,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_tox_release,Environmental burden,Toxic releases from facilities,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_traffic,Environmental burden,Traffic density near the tract,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9045,99.7,float64
+ces4_cleanup_sites,Environmental burden,Hazardous cleanup sites,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_groundwater_threats,Environmental burden,Groundwater contamination threats,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_haz_waste,Environmental burden,Hazardous waste facilities and generators,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_imp_water_bodies,Environmental burden,Impaired water bodies,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_solid_waste,Environmental burden,Solid waste sites and facilities,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_pollution_burden_score,Environmental burden,Combined pollution burden score,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_pollution_burden_pctl,Environmental burden,Combined pollution burden percentile,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_asthma_ed_rate,Environmental burden,Asthma emergency department visit rate,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+ces4_low_birth_weight,Environmental burden,Low birth weight infants,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,8945,98.6,float64
+ces4_cvd_ed_rate,Environmental burden,Cardiovascular disease ED visit rate,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9070,100,float64
+education_pct_less_hs,Socioeconomic,Adults 25+ without a high school diploma,CalEnviroScreen 4.0 -> 2020 tracts,% of adults 25+,9021,99.5,float64
+linguistic_isolation_pct,Socioeconomic,Households with no adult speaking English well,CalEnviroScreen 4.0 -> 2020 tracts,% of households,8877,97.9,float64
+unemployment_rate,Socioeconomic,Unemployed share of the labor force,CalEnviroScreen 4.0 -> 2020 tracts,% of labor force,8869,97.8,float64
+ces4_pop_char_score,Environmental burden,Population characteristics (sensitivity + socioeconomic) score,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9041,99.7,float64
+ces4_pop_char_pctl,Environmental burden,Population characteristics percentile,"CalEnviroScreen 4.0, area-weighted 2010->2020 tracts",indicator value,9041,99.7,float64
+n_mental_health_within_5mi,Access,Count of mental health facilities within 5 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_mental_health_within_10mi,Access,Count of mental health facilities within 10 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_mental_health_within_25mi,Access,Count of mental health facilities within 25 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+dist_to_any_care_mi,Access,"Distance to nearest mental-health, primary-care, hospital or rehab facility",CA HCAI,miles,9070,100,float64
+n_any_care_within_5mi,Access,Count of any care facilities within 5 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_any_care_within_10mi,Access,Count of any care facilities within 10 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_any_care_within_25mi,Access,Count of any care facilities within 25 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+dist_to_hospital_mi,Access,Distance to nearest general acute care hospital,CA HCAI,miles,9070,100,float64
+n_hospital_within_5mi,Access,Count of hospital facilities within 5 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_hospital_within_10mi,Access,Count of hospital facilities within 10 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_hospital_within_25mi,Access,Count of hospital facilities within 25 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+dist_to_primary_care_mi,Access,Distance to nearest primary care clinic,CA HCAI,miles,9070,100,float64
+n_primary_care_within_5mi,Access,Count of primary care facilities within 5 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_primary_care_within_10mi,Access,Count of primary care facilities within 10 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+n_primary_care_within_25mi,Access,Count of primary care facilities within 25 miles,CA HCAI health_facility_locations,facilities,9070,100,int64
+psych_beds_within_25mi,Access,Licensed psychiatric / chemical-dependency beds within 25 miles,CA HCAI CAPACITY,beds,9070,100,int64
+green_cov_pct_2009,Green,"Green cover share of tract area, 2009 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_pct_2012,Green,"Green cover share of tract area, 2012 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_pct_2014,Green,"Green cover share of tract area, 2014 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_pct_2016,Green,"Green cover share of tract area, 2016 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_pct_2018,Green,"Green cover share of tract area, 2018 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_pct_2020,Green,"Green cover share of tract area, 2020 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_pct_2022,Green,"Green cover share of tract area, 2022 (LA County only)",All Years Green Coverage Calculations,% of tract area,2474,27.3,float64
+green_cov_change_2009_2022,Green,"Change in green cover share, 2009 to 2022 (LA County)",All Years Green Coverage Calculations,percentage points,2474,27.3,float64
+park_access_green_pct_2022,Green,"Park-accessible green area share, 2022 (LA County)",All Years Green Coverage Calculations,%,1287,14.2,float64
+county_nonfarm_emp_2025,County economy,"Average monthly total nonfarm employment, 2025",CA EDD Current Employment Statistics,jobs,9070,100,float64
+county_nonfarm_emp_2024,County economy,"Average monthly total nonfarm employment, 2024",CA EDD CES,jobs,9070,100,float64
+county_nonfarm_emp_2019,County economy,"Average monthly total nonfarm employment, 2019 (pre-pandemic)",CA EDD CES,jobs,9070,100,float64
+county_emp_yoy_pct_2025,County economy,"Year-over-year employment change, 2025 vs 2024",Derived from CA EDD CES,%,9070,100,float64
+county_emp_change_vs_2019_pct,County economy,Employment change vs 2019 baseline,Derived from CA EDD CES,%,9070,100,float64
+county_health_social_emp_2025,County economy,"Health care & social assistance employment, 2025",CA EDD CES,jobs,7500,82.7,float64
+county_health_social_emp_share_pct,County economy,Health/social sector share of county nonfarm jobs,Derived from CA EDD CES,%,7500,82.7,float64
+us_poverty_rate_2024_acs1yr,National benchmark,US poverty rate (constant across rows),ACS 2024 1-yr table B17001,% of population,9070,100,float64
+us_rent_burden_30plus_pct_2024_acs1yr,National benchmark,US renters paying 30%+ of income on rent,ACS 2024 1-yr table B25070,% of renter households,9070,100,float64
+us_rent_burden_50plus_pct_2024_acs1yr,National benchmark,US renters paying 50%+ of income on rent,ACS 2024 1-yr table B25070,% of renter households,9070,100,float64
+poverty_rate_vs_us_ratio,National benchmark,Tract poverty rate divided by the US rate,Derived,ratio,9050,99.8,float64
+housing_burden_vs_us_ratio,National benchmark,Tract housing burden divided by the US rent-burden rate,Derived,ratio,9015,99.4,float64
+pm25_change_vs_ces4_baseline,Air quality,PM2.5 2021 minus CalEnviroScreen 2015-2017 baseline (trend),Derived,ug/m3,9070,100,float64
+pm25_state_percentile,Derived percentile,Tract PM2.5 percentile within California,Derived,percentile 0-100,9070,100,float64
+poverty_state_percentile,Derived percentile,Tract poverty percentile within California,Derived,percentile 0-100,9050,99.8,float64
+housing_burden_state_percentile,Derived percentile,Tract housing-burden percentile within California,Derived,percentile 0-100,9015,99.4,float64
+mh_access_barrier_percentile,Derived percentile,Tract distance-to-care percentile (higher = more isolated),Derived,percentile 0-100,9070,100,float64

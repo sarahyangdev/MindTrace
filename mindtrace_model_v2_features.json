@@ -1,0 +1,39 @@
+{
+  "features": [
+    "poverty_rate",
+    "housing_burden_pct",
+    "education_pct_less_hs",
+    "unemployment_rate",
+    "linguistic_isolation_pct",
+    "nb10_poverty_rate",
+    "nb10_education_pct_less_hs",
+    "poverty_vs_neighbours",
+    "housing_burden_pct_vs_county",
+    "pop_density_per_sqmi",
+    "pct_adult",
+    "pm25_annual",
+    "nb10_pm25_annual",
+    "pm25_peak_ratio",
+    "ozone_mean_ppb_2yr",
+    "ces4_diesel_pm",
+    "dist_to_mental_health",
+    "gravity_access_mh",
+    "n_primary_care_within_25mi",
+    "poverty_x_pm25"
+  ],
+  "params": {
+    "n_estimators": 1500,
+    "learning_rate": 0.02,
+    "max_depth": 4,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7,
+    "min_child_weight": 6,
+    "reg_lambda": 2,
+    "reg_alpha": 0.5,
+    "random_state": 42,
+    "n_jobs": 4
+  },
+  "target": "mhlth_crude_prev",
+  "r2_county_holdout": 0.7238,
+  "mae_county_holdout": 1.1784
+}
