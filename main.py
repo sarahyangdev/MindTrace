@@ -337,7 +337,7 @@ async def groq_explain(query: ExplainQuery):
             "is_fallback": False,
         }
     except Exception as e:
-        return {"response": f"AI insights temporarily unavailable {e}.", "is_fallback": True}
+        return {"response": f"AI insights temporarily unavailable {response.text}.", "is_fallback": True}
 
 
 # ─── Serve Frontend ────────────────────────────────────────────
