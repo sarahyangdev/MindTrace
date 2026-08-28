@@ -324,7 +324,7 @@ async def groq_explain(query: ExplainQuery):
         )
 
         response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
@@ -333,7 +333,7 @@ async def groq_explain(query: ExplainQuery):
             max_tokens=350,
         )
         return {
-            "response": response.choices[0].message.content,
+            "response": response.choices[0].delta.content,
             "is_fallback": False,
         }
     except Exception as e:
