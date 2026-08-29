@@ -333,11 +333,15 @@ async def groq_explain(query: ExplainQuery):
             max_tokens=350,
         )
         return {
-            "response": response.choices[0].delta.content,
+            "response": response.choices[0].message.content,
             "is_fallback": False,
         }
     except Exception as e:
-        return {"response": f"AI insights temporarily unavailable {response.text()}.", "is_fallback": True}
+    print(f"Groq error: {e}")
+    return {
+        "response": "AI insights temporarily unavailable. Please try again.",
+        "is_fallback": True,
+    }
 
 
 # ─── Serve Frontend ────────────────────────────────────────────
