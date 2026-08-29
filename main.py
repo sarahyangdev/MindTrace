@@ -337,7 +337,7 @@ async def groq_explain(query: ExplainQuery):
             "is_fallback": False,
         }
     except Exception as e:
-    print(f"Groq error: {e}")
+        print(f"Groq error: {e}")
     return {
         "response": "AI insights temporarily unavailable. Please try again.",
         "is_fallback": True,
