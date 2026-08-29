@@ -309,39 +309,49 @@ async def groq_explain(query: ExplainQuery):
         client = Groq(api_key=api_key)
 
         system_prompt = (
-            "You are an empathetic community health navigator. Explain model-derived "
-            "risk factors non-diagnostically using 'associated with' rather than causal "
-            "claims. Translate SHAP drivers into accessible insights and practical "
-            "environmental health recommendations. Keep responses under 200 words. "
-            "Structure as: 1) Community Snapshot, 2) Key Factors, 3) Recommendations."
+        "You are an empathetic community health navigator. Explain model-derived "
+        "risk factors non-diagnostically using 'associated with' rather than causal "
+        "claims. Translate SHAP drivers into accessible insights and practical "
+        "environmental health recommendations. Keep responses under 200 words. "
+        "Structure as: 1) Community Snapshot, 2) Key Factors, 3) Recommendations."
         )
+
         user_content = (
-            f"Tract: {row.tract_fips} | County: {row.county_name} | "
-            f"Predicted Distress: {pctl:.0f}th Percentile ({pred:.1f}%) | "
-            f"Top Drivers: {drivers_str} | "
-            f"Nearest MH facility: {row.dist_to_mental_health:.1f} mi | "
-            f"Open facilities nearby: {query.open_facilities_count}"
+        f"Tract: {row.tract_fips} | County: {row.county_name} | "
+        f"Predicted Distress: {pctl:.0f}th Percentile ({pred:.1f}%) | "
+        f"Top Drivers: {drivers_str} | "
+        f"Nearest MH facility: {row.dist_to_mental_health:.1f} mi | "
+        f"Open facilities nearby: {query.open_facilities_count}"
         )
 
         response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
+                model="qwen/qwen3.8-27b",
+                    messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+                ],
             temperature=0.3,
             max_tokens=350,
         )
+
+        print("GROQ RESPONSE:", response)
+
         return {
             "response": response.choices[0].message.content,
             "is_fallback": False,
         }
-    except Exception as e:
-        print(f"Groq error: {e}")
-        return {
-            "response": "AI insights temporarily unavailable. Please try again.",
-            "is_fallback": True,
-        }
+
+except Exception as e:
+    print("========== GROQ ERROR ==========")
+    print(type(e).__name__)
+    print(str(e))
+    print("================================")
+
+    return {
+        "response": f"Groq error: {str(e)}",
+        "is_fallback": True,
+    }
+
 
 
 # ─── Serve Frontend ────────────────────────────────────────────
