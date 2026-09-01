@@ -325,7 +325,7 @@ async def groq_explain(query: ExplainQuery):
         )
 
         response = client.chat.completions.create(
-                model="qwen/qwen3.8-27b",
+                model="openai/gpt-oss-120b",
                     messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
