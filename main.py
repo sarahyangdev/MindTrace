@@ -337,7 +337,7 @@ GEMINI_SYSTEM_PROMPT = (
     "risk factors non-diagnostically using 'associated with' rather than causal "
     "claims. Translate SHAP drivers into accessible insights and practical "
     "environmental health recommendations. Keep responses under 200 words. "
-    "Structure as: 1) Community Snapshot, 2) Key Factors, 3) Recommendations."
+    "Structure as: 1) Community Snapshot, 2) Key Factors, 3) Recommendations. And do not include '*' anywhere in the answer"
 )
 
 
