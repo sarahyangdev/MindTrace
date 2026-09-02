@@ -1,8 +1,9 @@
 // ─── State ────────────────────────────────────────────────────
-let map, tractsLayer, facilityMarkers = [];
+let map, tractsLayer, heatLayer, facilityMarkers = [];
 let allTracts = [];
 let selectedTractFips = null;
 let currentRadius = 5;
+let mapMode = 'points';
 
 // ─── Distress Color Scale ─────────────────────────────────────
 function distressColor(pctl) {
@@ -21,13 +22,12 @@ function initMap() {
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+    : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 
   L.tileLayer(tileUrl, {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.esri.com">Esri</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 16,
   }).addTo(map);
 
   tractsLayer = L.layerGroup().addTo(map);
@@ -69,6 +69,28 @@ async function loadTracts() {
   }
 }
 
+// ─── Map Mode (Points / Heatmap) ───────────────────────────────
+function setMapMode(mode) {
+  if (mode === mapMode || !allTracts.length) return;
+  mapMode = mode;
+  document.getElementById('mode-points').classList.toggle('active', mode === 'points');
+  document.getElementById('mode-heat').classList.toggle('active', mode === 'heat');
+
+  if (mode === 'heat') {
+    map.removeLayer(tractsLayer);
+    const points = allTracts.map(t => [t.la, t.lo, t.p / 100]);
+    heatLayer = L.heatLayer(points, {
+      radius: 16,
+      blur: 20,
+      maxZoom: 11,
+      gradient: { 0.0: '#2A9D8F', 0.3: '#7BC48C', 0.55: '#DDB94E', 0.75: '#D88A3E', 1.0: '#CB4F44' },
+    }).addTo(map);
+  } else {
+    if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+    tractsLayer.addTo(map);
+  }
+}
+
 // ─── Select Tract ─────────────────────────────────────────────
 async function selectTract(fips, lat, lon) {
   selectedTractFips = fips;
@@ -99,7 +121,7 @@ async function selectTract(fips, lat, lon) {
     const data = await res.json();
     renderTractDetails(data);
     fetchFacilities(data.lat, data.lon);
-    fetchGroqExplanation(fips);
+    fetchAIExplanation(fips);
   } catch (err) {
     console.error('Prediction failed:', err);
   }
@@ -114,8 +136,10 @@ function renderTractDetails(data) {
   distressEl.textContent = data.predicted_distress + '%';
   distressEl.style.color = distressColor(data.state_percentile);
 
+  const p = data.state_percentile;
+  const sfx = (p % 100 >= 11 && p % 100 <= 13) ? 'th' : {1:'st',2:'nd',3:'rd'}[p % 10] || 'th';
   document.getElementById('metric-pctl').innerHTML =
-    data.state_percentile + '<span style="font-size:12px;font-weight:400">th</span>';
+    p + '<span style="font-size:12px;font-weight:400">' + sfx + '</span>';
   document.getElementById('metric-pop').textContent = data.population.toLocaleString();
 
   renderShap(data.shap_drivers, data.baseline);
@@ -149,18 +173,18 @@ function renderShap(drivers, baseline) {
     `Baseline (state average): ${baseline}%`;
 }
 
-// ─── Groq AI Chat ─────────────────────────────────────────────
-async function fetchGroqExplanation(fips) {
-  const responseEl = document.getElementById('groq-response');
-  const cursorEl = document.getElementById('groq-cursor');
+// ─── Gemini AI Chat ───────────────────────────────────────────
+async function fetchAIExplanation(fips) {
+  const responseEl = document.getElementById('ai-response');
+  const cursorEl = document.getElementById('ai-cursor');
 
-  responseEl.innerHTML = '<span class="groq-loading">Generating community insights...</span>';
+  responseEl.innerHTML = '<span class="ai-loading">Generating community insights...</span>';
   responseEl.appendChild(cursorEl);
   cursorEl.style.display = 'inline-block';
 
   try {
     const facCount = document.getElementById('fac-count').textContent || '0';
-    const res = await fetch('/api/groq-explain', {
+    const res = await fetch('/api/ai-explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tract_fips: fips, open_facilities_count: parseInt(facCount) }),
@@ -168,7 +192,7 @@ async function fetchGroqExplanation(fips) {
     const data = await res.json();
     typewriterEffect(data.response, responseEl, cursorEl);
   } catch (err) {
-    responseEl.innerHTML = '<span class="groq-loading">Insights unavailable.</span>';
+    responseEl.innerHTML = '<span class="ai-loading">Insights unavailable.</span>';
     cursorEl.style.display = 'none';
   }
 }
@@ -281,6 +305,7 @@ const ZIP_COORDS = {
 
 function handleSearch() {
   const val = document.getElementById('search-input').value.trim();
+  if (!val) return;
 
   if (ZIP_COORDS[val]) {
     const [lat, lon] = ZIP_COORDS[val];
@@ -301,10 +326,13 @@ function handleSearch() {
     return;
   }
 
-  // Try as ZIP anyway via nearest tract
   if (val.match(/^\d{5}$/)) {
-    alert('ZIP code not in local lookup. Try entering coordinates (lat, lon) or an 11-digit tract FIPS code.');
+    alert('ZIP code not in local lookup. Try a county/area name (e.g. "Los Angeles"), coordinates, or an 11-digit tract FIPS code.');
+    return;
   }
+
+  // Not a ZIP, FIPS, or coordinate pair — treat as a county / area name.
+  searchArea(val);
 }
 
 function findAndSelectNearest(lat, lon) {
@@ -314,6 +342,77 @@ function findAndSelectNearest(lat, lon) {
     if (d < minD) { minD = d; nearest = t; }
   });
   if (nearest) selectTract(nearest.f, nearest.la, nearest.lo);
+}
+
+// ─── County / Area Search ───────────────────────────────────────
+async function searchArea(query) {
+  try {
+    const res = await fetch('/api/search-area?q=' + encodeURIComponent(query));
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.detail || `No county or area found matching "${query}".`);
+      return;
+    }
+    const data = await res.json();
+
+    map.fitBounds(
+      [[data.bbox.min_lat, data.bbox.min_lon], [data.bbox.max_lat, data.bbox.max_lon]],
+      { padding: [40, 40] }
+    );
+
+    if (mapMode === 'points') {
+      tractsLayer.eachLayer(layer => {
+        const t = allTracts.find(t => t.f === layer.tractFips);
+        const inCounty = t && t.c === data.county;
+        layer.setStyle({
+          radius: inCounty ? 5 : 3,
+          stroke: false,
+          fillOpacity: inCounty ? 0.85 : 0.15,
+        });
+      });
+    }
+
+    // Populate the insights panel with the tract nearest the county center.
+    let nearest = null, minD = Infinity;
+    allTracts.forEach(t => {
+      if (t.c !== data.county) return;
+      const d = Math.hypot(t.la - data.center.lat, t.lo - data.center.lon);
+      if (d < minD) { minD = d; nearest = t; }
+    });
+    if (nearest) {
+      selectedTractFips = nearest.f;
+      document.getElementById('panel-welcome').style.display = 'none';
+      document.getElementById('detail-view').classList.add('active');
+
+      const predRes = await fetch('/api/predict-community', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tract_fips: nearest.f }),
+      });
+      const predData = await predRes.json();
+      renderTractDetails(predData);
+      fetchAIExplanation(nearest.f);
+    }
+
+    // Show only the facilities located within this county.
+    const facsWithDist = data.facilities
+      .map(f => ({ ...f, distance_miles: Math.round(haversineMiles(data.center.lat, data.center.lon, f.lat, f.lon) * 100) / 100 }))
+      .sort((a, b) => a.distance_miles - b.distance_miles);
+    renderFacilities(facsWithDist, data.center.lat, data.center.lon);
+  } catch (err) {
+    console.error('Area search failed:', err);
+    alert('Area search failed. Is the server running?');
+  }
+}
+
+function haversineMiles(lat1, lon1, lat2, lon2) {
+  const R = 3958.8;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function handleGeolocate() {

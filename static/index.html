@@ -7,6 +7,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -25,7 +26,7 @@
       MindTrace
     </div>
     <div class="search-bar">
-      <input type="text" id="search-input" placeholder="Enter ZIP code, coordinates, or tract FIPS">
+      <input type="text" id="search-input" placeholder="ZIP, county/area name, coordinates, or tract FIPS">
       <button class="btn btn-primary" onclick="handleSearch()">Search</button>
       <button class="btn btn-secondary" onclick="handleGeolocate()" title="Use my location">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
@@ -39,6 +40,10 @@
     <!-- Map -->
     <section class="map-section">
       <div id="map"></div>
+      <div class="map-mode-toggle" id="map-mode-toggle">
+        <button class="mode-btn active" id="mode-points" onclick="setMapMode('points')">Points</button>
+        <button class="mode-btn" id="mode-heat" onclick="setMapMode('heat')">Heatmap</button>
+      </div>
       <div class="map-legend" id="map-legend">
         <div class="legend-title">Mental Distress Prevalence</div>
         <div class="legend-gradient"></div>
@@ -97,14 +102,14 @@
           <div class="shap-baseline" id="shap-baseline"></div>
         </div>
 
-        <!-- Groq AI -->
+        <!-- Gemini AI -->
         <div class="panel-section">
-          <div class="groq-header">
+          <div class="ai-header">
             <h3>Community Insights</h3>
-            <span class="groq-badge">Groq AI</span>
+            <span class="ai-badge">Gemini AI</span>
           </div>
-          <div class="groq-response" id="groq-response">
-            <span class="groq-cursor" id="groq-cursor"></span>
+          <div class="ai-response" id="ai-response">
+            <span class="ai-cursor" id="ai-cursor"></span>
           </div>
         </div>
       </div>

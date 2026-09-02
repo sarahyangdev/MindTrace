@@ -411,15 +411,15 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 .shap-value.neg { color: var(--buffer); }
 .shap-baseline { font-size: 10px; color: var(--text-3); text-align: center; margin-top: 4px; }
 
-/* ─── Groq Chat ────────────────────────────────────────────── */
-.groq-header {
+/* ─── Gemini AI Chat ───────────────────────────────────────── */
+.ai-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
-.groq-header h3 { font-size: 13px; font-weight: 600; }
-.groq-badge {
+.ai-header h3 { font-size: 13px; font-weight: 600; }
+.ai-badge {
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -429,9 +429,9 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   background: var(--surface-3);
   color: var(--text-3);
 }
-.groq-response { font-size: 13px; line-height: 1.65; color: var(--text-2); }
-.groq-response strong { color: var(--text-1); font-weight: 600; }
-.groq-cursor {
+.ai-response { font-size: 13px; line-height: 1.65; color: var(--text-2); }
+.ai-response strong { color: var(--text-1); font-weight: 600; }
+.ai-cursor {
   display: inline-block;
   width: 2px; height: 14px;
   background: var(--accent);
@@ -439,10 +439,39 @@ button:focus-visible, input:focus-visible, a:focus-visible {
   animation: blink 0.8s step-end infinite;
 }
 @keyframes blink { 50% { opacity: 0; } }
-.groq-loading {
+.ai-loading {
   color: var(--text-3);
   font-size: 12px;
   font-style: italic;
+}
+
+/* ─── Map Mode Toggle ──────────────────────────────────────── */
+.map-mode-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  z-index: 500;
+}
+.mode-btn {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-btn.active {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ─── Facilities ───────────────────────────────────────────── */
@@ -631,5 +660,5 @@ button:focus-visible, input:focus-visible, a:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .breathing-circle.active { animation: none; }
-  .groq-cursor { animation: none; opacity: 1; }
+  .ai-cursor { animation: none; opacity: 1; }
 }

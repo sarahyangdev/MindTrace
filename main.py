@@ -1,17 +1,19 @@
 """
 MindTrace — FastAPI Backend
-Serves ML predictions, SHAP explainability, facility finder, and Groq AI chat.
+Serves ML predictions, SHAP explainability, facility finder, and Gemini AI chat.
 Designed for Render deployment with static frontend.
 """
 
 import os
 import json
 import math
+import difflib
 from typing import Optional
 from contextlib import asynccontextmanager
 
 import numpy as np
 import pandas as pd
+import requests
 import shap
 from xgboost import XGBRegressor
 from fastapi import FastAPI, HTTPException
@@ -53,6 +55,13 @@ PRETTY = {
 }
 
 CONTEXT_ONLY = {"pct_adult", "pop_density_per_sqmi"}
+
+
+def _ordinal(n: int) -> str:
+    if 11 <= n % 100 <= 13:
+        return f"{n}th"
+    suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
 
 
 # ─── Startup / Shutdown ────────────────────────────────────────
@@ -133,6 +142,7 @@ def _generate_sample_facilities(frame):
             "phone": f"({310 + (i * 17) % 680}) {100 + (i * 31) % 900}-{1000 + (i * 41) % 9000}",
             "services": types[i % len(types)],
             "is_open": i % 3 != 0,
+            "county": row.county_name,
         })
     return facs
 
@@ -267,8 +277,88 @@ async def locate_facilities(query: LocationQuery):
     return {"facilities": results[:15], "total_found": len(results)}
 
 
-@app.post("/api/groq-explain")
-async def groq_explain(query: ExplainQuery):
+AREA_ALIASES = {
+    "la": "Los Angeles", "l.a.": "Los Angeles", "los angeles": "Los Angeles",
+    "sf": "San Francisco", "san fran": "San Francisco", "bay area": "San Francisco",
+    "sd": "San Diego",
+    "san jose": "Santa Clara", "silicon valley": "Santa Clara",
+    "oakland": "Alameda", "berkeley": "Alameda",
+    "long beach": "Los Angeles", "santa monica": "Los Angeles", "pasadena": "Los Angeles",
+    "anaheim": "Orange", "irvine": "Orange", "santa ana": "Orange",
+    "sacto": "Sacramento",
+    "sonoma": "Sonoma", "napa valley": "Napa",
+}
+
+
+@app.get("/api/search-area")
+async def search_area(q: str):
+    """Fuzzy county/area lookup: zooms the map and scopes facilities to one CA county."""
+    q = q.strip()
+    if not q:
+        raise HTTPException(400, "Query required")
+
+    counties = df.county_name.unique().tolist()
+    ql = q.lower()
+
+    alias_hit = AREA_ALIASES.get(ql)
+    substring_hits = [c for c in counties if ql in c.lower()]
+    fuzzy_hits = difflib.get_close_matches(q, counties, n=1, cutoff=0.65)
+    matches = ([alias_hit] if alias_hit else []) or substring_hits or fuzzy_hits
+
+    if not matches:
+        raise HTTPException(404, f"No California county or area found matching '{q}'")
+
+    county = matches[0]
+    subset = df[df.county_name == county]
+
+    bbox = {
+        "min_lat": float(subset.tract_lat.min()),
+        "max_lat": float(subset.tract_lat.max()),
+        "min_lon": float(subset.tract_lon.min()),
+        "max_lon": float(subset.tract_lon.max()),
+    }
+    center = {
+        "lat": float(subset.tract_lat.mean()),
+        "lon": float(subset.tract_lon.mean()),
+    }
+    county_facilities = [f for f in facilities if f.get("county") == county]
+
+    return {
+        "county": county,
+        "bbox": bbox,
+        "center": center,
+        "tract_count": int(len(subset)),
+        "facilities": county_facilities,
+    }
+
+
+GEMINI_SYSTEM_PROMPT = (
+    "You are an empathetic community health navigator. Explain model-derived "
+    "risk factors non-diagnostically using 'associated with' rather than causal "
+    "claims. Translate SHAP drivers into accessible insights and practical "
+    "environmental health recommendations. Keep responses under 200 words. "
+    "Structure as: 1) Community Snapshot, 2) Key Factors, 3) Recommendations."
+)
+
+
+def _call_gemini(user_content: str) -> str:
+    api_key = os.environ.get("GEMINI_API_KEY")
+    model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+    payload = {
+        "systemInstruction": {"parts": [{"text": GEMINI_SYSTEM_PROMPT}]},
+        "contents": [{"role": "user", "parts": [{"text": user_content}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 350},
+    }
+    resp = requests.post(url, params={"key": api_key}, json=payload, timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
+    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+
+@app.post("/api/ai-explain")
+async def ai_explain(query: ExplainQuery):
     match = df[df.tract_fips == query.tract_fips]
     if match.empty:
         raise HTTPException(404, "Census tract not found")
@@ -286,14 +376,15 @@ async def groq_explain(query: ExplainQuery):
     )[:3]
     drivers_str = " | ".join(f"{n} ({v:+.1f})" for n, v in top)
 
-    api_key = os.environ.get("GROQ_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
+        print("WARNING: GEMINI_API_KEY not set — using fallback response")
         stressors = [n for n, v in top if v > 0]
         buffers = [n for n, v in top if v < 0]
         return {
             "response": (
                 f"This census tract in {row.county_name} County shows a predicted mental "
-                f"distress prevalence of {pred:.1f}%, placing it at the {pctl:.0f}th "
+                f"distress prevalence of {pred:.1f}%, placing it at the {_ordinal(int(pctl))} "
                 f"percentile statewide. Primary factors associated with elevated distress: "
                 f"{', '.join(stressors) if stressors else 'none identified'}. "
                 f"{'Protective factors: ' + ', '.join(buffers) + '. ' if buffers else ''}"
@@ -303,55 +394,20 @@ async def groq_explain(query: ExplainQuery):
             "is_fallback": True,
         }
 
-    try:
-        from groq import Groq
-
-        client = Groq(api_key=api_key)
-
-        system_prompt = (
-        "You are an empathetic community health navigator. Explain model-derived "
-        "risk factors non-diagnostically using 'associated with' rather than causal "
-        "claims. Translate SHAP drivers into accessible insights and practical "
-        "environmental health recommendations. Keep responses under 200 words. "
-        "Structure as: 1) Community Snapshot, 2) Key Factors, 3) Recommendations."
-        )
-
-        user_content = (
+    user_content = (
         f"Tract: {row.tract_fips} | County: {row.county_name} | "
-        f"Predicted Distress: {pctl:.0f}th Percentile ({pred:.1f}%) | "
+        f"Predicted Distress: {_ordinal(int(pctl))} Percentile ({pred:.1f}%) | "
         f"Top Drivers: {drivers_str} | "
         f"Nearest MH facility: {row.dist_to_mental_health:.1f} mi | "
         f"Open facilities nearby: {query.open_facilities_count}"
-        )
+    )
 
-        response = client.chat.completions.create(
-                model="openai/gpt-oss-120b",
-                    messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-                ],
-            temperature=0.3,
-            max_tokens=350,
-        )
-
-        print("GROQ RESPONSE:", response)
-
-        return {
-            "response": response.choices[0].message.content,
-            "is_fallback": False,
-        }
-
-except Exception as e:
-    print("========== GROQ ERROR ==========")
-    print(type(e).__name__)
-    print(str(e))
-    print("================================")
-
-    return {
-        "response": f"Groq error: {str(e)}",
-        "is_fallback": True,
-    }
-
+    try:
+        text = _call_gemini(user_content)
+        return {"response": text, "is_fallback": False}
+    except Exception as e:
+        print(f"GEMINI ERROR: {type(e).__name__}: {e}")
+        return {"response": "AI insights temporarily unavailable.", "is_fallback": True}
 
 
 # ─── Serve Frontend ────────────────────────────────────────────
